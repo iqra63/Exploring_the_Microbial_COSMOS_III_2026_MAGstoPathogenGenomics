@@ -359,7 +359,7 @@ GTDB-Tk in KBase does **not** accept individual Assembly objects directly, they 
 | Parameter | Value |
 |---|---|
 | Input object | your AssemblySet from Step 10.2 |
-| Reference data | keep the default (currently GTDB R07-RS207 / R08-RS214, class-level subtrees — lighter on memory than the full tree) |
+| Reference data | keep the default (currently GTDB R07-RS207 / R08-RS214, class-level subtrees, lighter on memory than the full tree) |
 
 **Output:** a taxonomic classification per MAG (domain → species, as far as confidently resolvable) plus a phylogenetic placement, viewable directly in the Narrative.
 
