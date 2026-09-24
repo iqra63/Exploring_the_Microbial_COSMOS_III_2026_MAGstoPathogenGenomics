@@ -110,34 +110,34 @@ Run on the **raw** fastq.gz file — no special settings needed. This establishe
 |---|---|
 | Input | raw mock fastq.gz |
 
-> A synthetically tiled mock sample will typically show **uniform maximum quality scores** and **no adapter content** — quite different from real sequencing data. Worth pointing out to attendees as a sign this is simulated, not instrument-generated, data.
+> A synthetically tiled mock sample will typically show **uniform maximum quality scores** and **no adapter content** , quite different from real sequencing data. Worth pointing out to attendees as a sign this is simulated, not instrument-generated, data.
 
 ---
 
 
 ## Step 2 — KneadData (single-end mode)
 
-Run on the **raw fastq.gz**, even though the mock sample is already clean — this step is included for demonstration purposes, so attendees see the full standard pipeline.
+Run on the **raw fastq.gz**, even though the mock sample is already clean, this step is included for demonstration purposes, so attendees see the full standard pipeline.
 
 | Parameter | Value |
 |---|---|
 | Input | **Single-end** — select the one raw fastq.gz file |
 | Reference database | your host-decontamination DB (Human Genome) |
 
-Expect minimal trimming/removal, since the sample is already clean — a fine teaching point in itself ("here's what KneadData reports when there's nothing to clean"). Use the main cleaned-reads output going forward for assembly and taxnomic profiling.
+Expect minimal trimming/removal, since the sample is already clean, a fine teaching point in itself ("here's what KneadData reports when there's nothing to clean"). Use the main cleaned-reads output going forward for assembly and taxnomic profiling.
 
 ---
 
 ## Step 3 — MetaPHlAn (on the ORIGINAL raw fastq.gz)
 
-Run MetaPHlAn on the **original, untouched raw fastq.gz** — this is a separate, parallel branch from the assembly path. MetaPHlAn profiles taxonomic composition directly from reads using marker genes, giving a quick community snapshot to later compare against what the assembly/binning pipeline recovers.
+Run MetaPHlAn on the **original, untouched raw fastq.gz** , this is a separate, parallel branch from the assembly path. MetaPHlAn profiles taxonomic composition directly from reads using marker genes, giving a quick community snapshot to later compare against what the assembly/binning pipeline recovers.
 
 | Parameter | Value |
 |---|---|
 | Input | **Single-end** mode |
 | Input file | the **original mock raw** fastq.gz (not KneadData's output) |
 
-Keep this output aside — you'll compare it against the GTDB-Tk classification of your final MAGs in Step 8.
+Keep this output aside, you'll compare it against the GTDB-Tk classification of your final MAGs in Step 8.
 
 ---
 
@@ -259,7 +259,7 @@ CONCOCT needs its own multi-step chain, since it clusters cut-up contig fragment
 
 First, convert each binner's fasta bins into a contig-to-bin table:
 
-**Tool:** `Converts genome bins in fasta format` — run once per binner, selecting each binner's final fasta bin output (MetaBAT2's "Bin sequences", MaxBin2's "Bins", CONCOCT's "Extract a fasta file" output).
+**Tool:** `Converts genome bins in fasta format` ,  run once per binner, selecting each binner's final fasta bin output (MetaBAT2's "Bin sequences", MaxBin2's "Bins", CONCOCT's "Extract a fasta file" output).
 
 Then run:
 
@@ -314,19 +314,19 @@ gtdbtk classify_wf \
 cat gtdbtk_output/gtdbtk.bac120.summary.tsv
 ```
 
-> Low-completeness bins may only classify to a shallow taxonomic level (e.g. phylum rather than species) — this is expected with partial genomes.
+> Low-completeness bins may only classify to a shallow taxonomic level (e.g. phylum rather than species), this is expected with partial genomes.
 
-**Finally, compare methods:** put your **MetaPHlAn read-based taxonomic profile** (Step 4) side by side with the **GTDB-Tk classification of your assembled/binned MAGs** (this step) — a good discussion point on how read-based vs. assembly-based taxonomic methods can agree or diverge.
+**Finally, compare methods:** put your **MetaPHlAn read-based taxonomic profile** (Step 4) side by side with the **GTDB-Tk classification of your assembled/binned MAGs** (this step), a good discussion point on how read-based vs. assembly-based taxonomic methods can agree or diverge.
 
 ---
 
 ## Step 9 — KBase: MAGs Phylogenetic Classification
 
-As an alternative (or complement) to running GTDB-Tk locally, you can run the same classification inside [KBase](https://www.kbase.us/) — a free, browser-based platform that also gives you a proper phylogenetic tree placement for your MAGs, not just a summary table.
+As an alternative (or complement) to running GTDB-Tk locally, you can run the same classification inside [KBase](https://www.kbase.us/) , a free, browser-based platform that also gives you a proper phylogenetic tree placement for your MAGs, not just a summary table.
 
 ### 9.1 — Upload your high-quality MAGs to KBase
 
-1. Take the **ranked/high-quality bins** from your DAS_Tool output (Step 8) — typically the ones with the best completeness/contamination scores from Step 9's CheckM report.
+1. Take the **ranked/high-quality bins** from your DAS_Tool output (Step 8), typically the ones with the best completeness/contamination scores from Step 9's CheckM report.
 2. In a KBase Narrative, go to **Upload** → **Staging Area**, and upload each MAG fasta file.
 3. For each fasta file, run:
 
@@ -343,7 +343,7 @@ Repeat for each MAG you want to classify.
 
 ### 9.2 — Build an AssemblySet
 
-GTDB-Tk in KBase does **not** accept individual Assembly objects directly — they must first be grouped into an **AssemblySet** (this avoids running the app inefficiently, once per genome).
+GTDB-Tk in KBase does **not** accept individual Assembly objects directly, they must first be grouped into an **AssemblySet** (this avoids running the app inefficiently, once per genome).
 
 **App:** `Build AssemblySet`
 
@@ -377,7 +377,7 @@ Once you've identified a MAG of interest as a likely pathogen, upload its fasta 
 
 1. Download the specific MAG's fasta file from KBase (or directly from your Galaxy DAS_Tool "Bins" output).
 2. Go to [pathogen.watch/upload](https://pathogen.watch/upload) and create/sign in to an account.
-3. Select the correct **organism/species scheme** matching your GTDB-Tk classification (Pathogenwatch supports specific pathogens — e.g. *Streptococcus*, *Salmonella*, *E. coli*, *Klebsiella*, *M. tuberculosis*, *Neisseria*, and others — check their supported organism list, since unsupported organisms won't have a dedicated typing scheme).
+3. Select the correct **organism/species scheme** matching your GTDB-Tk classification (Pathogenwatch supports specific pathogens .e.g. *Streptococcus*, *Salmonella*, *E. coli*, *Klebsiella*, *M. tuberculosis*, *Neisseria*, and others, check their supported organism list, since unsupported organisms won't have a dedicated typing scheme).
 4. Upload the fasta file.
 5. Review the results: AMR gene predictions, sequence typing (MLST/cgMLST where supported), and clustering against Pathogenwatch's global genome collection.
 
