@@ -108,7 +108,7 @@ Run on the **raw** fastq.gz file — no special settings needed. This establishe
 
 | Parameter | Value |
 |---|---|
-| Input | raw fastq.gz |
+| Input | raw mock fastq.gz |
 
 > A synthetically tiled mock sample will typically show **uniform maximum quality scores** and **no adapter content** — quite different from real sequencing data. Worth pointing out to attendees as a sign this is simulated, not instrument-generated, data.
 
@@ -135,7 +135,7 @@ Run MetaPHlAn on the **original, untouched raw fastq.gz** — this is a separate
 | Parameter | Value |
 |---|---|
 | Input | **Single-end** mode |
-| Input file | the **original raw** fastq.gz (not KneadData's output) |
+| Input file | the **original mock raw** fastq.gz (not KneadData's output) |
 
 Keep this output aside — you'll compare it against the GTDB-Tk classification of your final MAGs in Step 8.
 
