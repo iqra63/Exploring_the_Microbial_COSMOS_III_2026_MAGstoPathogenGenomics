@@ -1,7 +1,7 @@
 # Exploring the Microbial COSMOS III
-### From a single-end mock sample to quality-checked, taxonomically classified MAGs — using Galaxy
+### From a single-end mock sample to quality-checked, taxonomically classified MAGs using Galaxy
 
-This tutorial walks through a complete metagenomic binning pipeline in [Galaxy](https://usegalaxy.eu/), starting from a **single-end** mock/demo sample, through quality control, taxonomic profiling, assembly, binning, refinement, quality assessment, and taxonomic classification of the final MAGs.
+This tutorial walks through a complete metagenomic binning pipeline in [Galaxy](https://usegalaxy.eu/), starting from a **single-end** mock/demo sample, through quality control, taxonomic profiling, assembly, binning, refinement, quality assessment,taxonomic classification of the final MAGs, detection of pathogen and its complete AMR profiling, serotyping and sequence typing.
 
 Adapted from the official [GTN Binning of metagenomic sequencing data tutorial](https://training.galaxyproject.org/training-material/topics/microbiome/tutorials/metagenomics-binning/tutorial.html), with parameters adjusted for single-end input.
 
@@ -27,7 +27,7 @@ Adapted from the official [GTN Binning of metagenomic sequencing data tutorial](
 
 ## Prerequisites
 
-- A [Galaxy](https://usegalaxy.eu/) account
+- A [Galaxy_EU](https://usegalaxy.eu/) account or [Glaxy_US](https://usegalaxy.org/) account
 - A single-end fastq.gz sample (e.g. a mock/demo community)
 - Basic familiarity with the Galaxy interface (uploading data, running tools)
 
