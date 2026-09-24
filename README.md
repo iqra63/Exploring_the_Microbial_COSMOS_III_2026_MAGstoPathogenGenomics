@@ -36,7 +36,7 @@ Adapted from the official [GTN Binning of metagenomic sequencing data tutorial](
 1. **Create a new history** in Galaxy — this keeps all your workshop files organized in one place (click the **+** icon at the top of the History panel, or **Data → Histories → Create new**).
 2. **Upload your data** — click the **Upload Data** button (top-left of the tool panel). In the upload window:
    - Click **Choose local file** (or drag and drop) and select your `.fastq.gz` file.
-   - Set the **Type** (file format) dropdown to **`fastqsanger.gz`** — do not leave it as "auto-detect".
+   - Set the **Type** (file format) dropdown to **`fastqsanger.gz`** , do not leave it as "auto-detect".
    - Click the **Start** button to begin the upload.
    - Once finished, click **Close**, and wait until the dataset turns **green** in your History panel on the right before moving on.
 3. **Run FastQC** — use the tool search bar on the left-hand tool panel, search for "**fastqc**", select the tool, and run it on your uploaded file (see [Step 1](#step-1--fastqc) below for full details).
@@ -48,7 +48,7 @@ Completing these two tool runs (FastQC and KneadData) ahead of time means we can
 
 ## About the Sample
 
-Some mock/demo samples — particularly synthetically generated, reference-based mock communities — are **single-end only** and **cannot be converted to paired-end**. Pairing reflects a real physical sequencing process (two ends of the same DNA fragment being sequenced); a single tiled or single-end fastq file has no second read to pair with.
+Some mock/demo samples, particularly synthetically generated, reference-based mock communities, are **single-end only** and **cannot be converted to paired-end**. Pairing reflects a real physical sequencing process (two ends of the same DNA fragment being sequenced); a single tiled or single-end fastq file has no second read to pair with.
 
 **A tell-tale sign of a synthetically tiled mock sample:** headers where each successive read starts exactly one base later than the previous one, combined with uniform maximum quality scores across every base. If you see this pattern, treat the file as single-end and do not attempt to force-pair or interleave it.
 
@@ -104,7 +104,7 @@ raw_mock.fastq.gz
 
 ## Step 1 — FastQC
 
-Run on the **raw** fastq.gz file — no special settings needed. This establishes a baseline before any processing.
+Run on the **raw** fastq.gz file, no special settings needed. This establishes a baseline before any processing.
 
 | Parameter | Value |
 |---|---|
