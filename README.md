@@ -253,11 +253,6 @@ CONCOCT needs its own multi-step chain, since it clusters cut-up contig fragment
 |---|---|
 | Original contig file | assembly Contigs by MEGAHIT (original, full-length — not cut-up) |
 | CONCOCT clusters | merged clusters from Step D |
-
-> ⚠️ CONCOCT's Gaussian clustering model often struggles on small/uneven-coverage demo datasets — expect many low-completeness bins. This is documented, expected behavior, not a sign of misconfiguration.
-
-> ⚠️ **Do not use MetaWRAP** anywhere in this pipeline — it hard-requires a `collection_type="paired"` input and will not accept single-end reads under any workaround.
-
 ---
 
 ## Step 7 — Bin Refinement (DAS_Tool)
