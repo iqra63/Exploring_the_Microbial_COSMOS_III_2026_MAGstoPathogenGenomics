@@ -30,7 +30,15 @@ Adapted from the official [GTN Binning of metagenomic sequencing data tutorial](
 - A [Galaxy](https://usegalaxy.eu/) account
 - A single-end fastq.gz sample (e.g. a mock/demo community)
 - Basic familiarity with the Galaxy interface (uploading data, running tools)
-- Try to run Step 1 and Step 2
+
+**Before the workshop, please complete the following setup:**
+
+1. **Create a new history** in Galaxy — this keeps all your workshop files organized in one place (click the **+** icon at the top of the History panel, or **Data → Histories → Create new**).
+2. **Upload your data** — drag and drop your `.fastq.gz` file into Galaxy, or use the **Upload Data** button, and wait until it turns green (finished) in your history.
+3. **Run FastQC** — use the tool search bar on the left-hand tool panel, search for "**fastqc**", select the tool, and run it on your uploaded file (see [Step 1](#step-1--fastqc) below for full details).
+4. **Run KneadData** — search for "**kneaddata**" in the tool search bar and run it on the same raw file (see [Step 2](#step-2--kneaddata-single-end-mode) below for full details).
+
+Completing these two tool runs (FastQC and KneadData) ahead of time means we can dive straight into the more interesting parts of the pipeline during the workshop itself.
 
 ---
 
