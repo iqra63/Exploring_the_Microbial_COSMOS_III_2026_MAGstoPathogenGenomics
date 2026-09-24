@@ -1,94 +1,154 @@
 # Metagenomics to Pathogen Genomics Workshop
-### From raw reads to quality-checked, taxonomically classified MAGs — using Galaxy
+### From a single-end mock sample to quality-checked, taxonomically classified MAGs — using Galaxy
 
-This tutorial walks through a complete metagenomic binning pipeline in [Galaxy](https://usegalaxy.eu/), from raw paired-end sequencing reads to final Metagenome-Assembled Genomes (MAGs) with quality scores and taxonomic classification.
+This tutorial walks through a complete metagenomic binning pipeline in [Galaxy](https://usegalaxy.eu/), starting from a **single-end** mock/demo sample, through quality control, taxonomic profiling, assembly, binning, refinement, quality assessment, and taxonomic classification of the final MAGs.
 
-Based on and adapted from the official [GTN Binning of metagenomic sequencing data tutorial](https://training.galaxyproject.org/training-material/topics/microbiome/tutorials/metagenomics-binning/tutorial.html).
+Adapted from the official [GTN Binning of metagenomic sequencing data tutorial](https://training.galaxyproject.org/training-material/topics/microbiome/tutorials/metagenomics-binning/tutorial.html), with parameters adjusted for single-end input.
 
 ---
 
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
-2. [Getting Demo Data](#getting-demo-data)
-3. [Quality Control](#1-quality-control-kneaddata)
-4. [Assembly](#2-assembly)
-5. [Read Mapping](#3-read-mapping-bowtie2)
-6. [Binning](#4-binning)
-   - [MetaBAT2](#41-metabat2)
-   - [MaxBin2](#42-maxbin2)
-   - [CONCOCT](#43-concoct)
-7. [Bin Refinement](#5-bin-refinement)
-8. [Quality Assessment](#6-quality-assessment-checkm)
-9. [Taxonomic Classification](#7-taxonomic-classification-gtdb-tk)
-10. [Troubleshooting](#troubleshooting--common-pitfalls)
+2. [About the Sample](#about-the-sample)
+3. [Workflow at a Glance](#workflow-at-a-glance)
+4. [Step 1 — FastQC](#step-1--fastqc)
+5. [Step 2 — KneadData](#step-2--kneaddata-single-end-mode)
+6. [Step 3 — MetaPHlAn](#step-3--metaphlan-on-the-original-raw-fastqgz)
+7. [Step 4 — Assembly (MEGAHIT)](#step-4--megahit-assembly-single-end-mode)
+8. [Step 5 — Read Mapping (Bowtie2)](#step-5--bowtie2-single-end-mode)
+9. [Step 6 — Binning](#step-6--binning)
+10. [Step 7 — Bin Refinement (DAS_Tool)](#step-7--bin-refinement-das_tool)
+11. [Step 8 — Quality Assessment & Taxonomy](#step-8--quality-assessment--taxonomy)
+12. [Step 9 — KBase: Phylogenetic Classification](#step-9--kbase-phylogenetic-classification)
+13. [Step 10 — Pathogenwatch: Pathogen Identification](#step-10--pathogenwatch-pathogen-identification)
+14. [Troubleshooting](#troubleshooting--common-pitfalls)
 
 ---
 
 ## Prerequisites
 
 - A [Galaxy](https://usegalaxy.eu/) account
-- Paired-end fastq reads (forward + reverse)
-- Basic familiarity with the Galaxy interface (uploading data, running tools, building collections)
+- A single-end fastq.gz sample (e.g. a mock/demo community)
+- Basic familiarity with the Galaxy interface (uploading data, running tools)
 
 ---
 
-## Getting Demo Data
+## About the Sample
 
-For a workshop-scale demo (fast runtime, small download), use the official GTN test dataset:
+Some mock/demo samples — particularly synthetically generated, reference-based mock communities — are **single-end only** and **cannot be converted to paired-end**. Pairing reflects a real physical sequencing process (two ends of the same DNA fragment being sequenced); a single tiled or single-end fastq file has no second read to pair with.
 
-```
-https://zenodo.org/records/17661262/files/reads_forward.fastqsanger.gz
-https://zenodo.org/records/17661262/files/reads_reverse.fastqsanger.gz
-```
+**A tell-tale sign of a synthetically tiled mock sample:** headers where each successive read starts exactly one base later than the previous one, combined with uniform maximum quality scores across every base. If you see this pattern, treat the file as single-end and do not attempt to force-pair or interleave it.
 
-Upload both files to a new Galaxy history, then build a **paired dataset collection**:
-1. Select both files in your history
-2. Choose **"Build Dataset Pair"**
-3. Assign forward/reverse correctly, name it, and create
-
-> ⚠️ If you're using your own real data instead of the demo set, and it's large, **subsample first** to keep runtimes workshop-friendly:
-> ```bash
-> seqtk sample -s100 reads_1.fastq.gz 100000 | gzip > sub_R1.fastq.gz
-> seqtk sample -s100 reads_2.fastq.gz 100000 | gzip > sub_R2.fastq.gz
-> ```
-> Use the **same seed** (`-s100`) for both files so read pairs stay synced. Verify both outputs have identical read counts before proceeding.
+Because of this, this tutorial uses **single-end-specific settings** at every relevant step, and **does not use MetaWRAP** — MetaWRAP hard-requires a paired dataset collection and will not accept single-end reads under any workaround.
 
 ---
 
-## 1. Quality Control (KneadData)
+## Workflow at a Glance
 
-**Tool:** `KneadData`
+```
+raw_mock.fastq.gz
+   │
+   ├──> FastQC ──> check stats
+   │
+   ├──> KneadData (single-end) ──> cleaned reads
+   │                                    │
+   │                                    └──> MEGAHIT (single-end) ──> assembly (Contigs)
+   │                                                                        │
+   └──> MetaPHlAn (single-end, on the ORIGINAL raw fastq.gz)                │
+        [taxonomic profile — independent branch, for comparison]           │
+                                                                            ▼
+                                                              Bowtie2 (single-end) ──> BAM
+                                                                            │
+                                                                     Samtools sort
+                                                                            │
+                                                          Calculate contig depths
+                                                                            │
+                                      ┌─────────────────────────────────────┼─────────────────────────────────────┐
+                                      ▼                                     ▼                                     ▼
+                                 MetaBAT2                                MaxBin2                              CONCOCT
+                                      └─────────────────────────────────────┼─────────────────────────────────────┘
+                                                                            ▼
+                                                                        DAS_Tool
+                                                                            │
+                                                                            ▼
+                                                                  CheckM  →  GTDB-Tk (local)
+                                                                            │
+                                                                            ▼
+                                              KBase: Import Assembly → Build AssemblySet
+                                                                            │
+                                                                            ▼
+                                                              KBase: GTDB-Tk Classify
+                                                              (taxonomy + phylogenetic tree)
+                                                                            │
+                                                                            ▼
+                                                                 Identify candidate pathogen
+                                                                            │
+                                                                            ▼
+                                                            Pathogenwatch (AMR + typing)
+```
+
+---
+
+## Step 1 — FastQC
+
+Run on the **raw** fastq.gz file — no special settings needed. This establishes a baseline before any processing.
 
 | Parameter | Value |
 |---|---|
-| Input | your paired collection |
+| Input | raw fastq.gz |
 
-**Outputs to keep:** use the **"Paired output reads"** output — this is your final, QC'd, host-decontaminated reads. Ignore "Trimmed paired reads" and "Repeats removed paired reads" (intermediate steps).
+> A synthetically tiled mock sample will typically show **uniform maximum quality scores** and **no adapter content** — quite different from real sequencing data. Worth pointing out to attendees as a sign this is simulated, not instrument-generated, data.
 
 ---
 
-## 2. Assembly
 
-**Tool:** `MEGAHIT` (recommended for speed) or `metaSPAdes` (higher quality, slower)
+## Step 2 — KneadData (single-end mode)
+
+Run on the **raw fastq.gz**, even though the mock sample is already clean — this step is included for demonstration purposes, so attendees see the full standard pipeline.
 
 | Parameter | Value |
 |---|---|
-| Input reads | KneadData "Paired output reads" |
+| Input | **Single-end** — select the one raw fastq.gz file |
+| Reference database | your host-decontamination DB (Human Genome) |
 
-Use the **Contigs** output (not Scaffolds) for all downstream binning steps — scaffolds contain gap characters (`N`s) that interfere with coverage calculation and clustering.
+Expect minimal trimming/removal, since the sample is already clean — a fine teaching point in itself ("here's what KneadData reports when there's nothing to clean"). Use the main cleaned-reads output going forward for assembly and taxnomic profiling.
 
 ---
 
-## 3. Read Mapping (Bowtie2)
+## Step 3 — MetaPHlAn (on the ORIGINAL raw fastq.gz)
+
+Run MetaPHlAn on the **original, untouched raw fastq.gz** — this is a separate, parallel branch from the assembly path. MetaPHlAn profiles taxonomic composition directly from reads using marker genes, giving a quick community snapshot to later compare against what the assembly/binning pipeline recovers.
+
+| Parameter | Value |
+|---|---|
+| Input | **Single-end** mode |
+| Input file | the **original raw** fastq.gz (not KneadData's output) |
+
+Keep this output aside — you'll compare it against the GTDB-Tk classification of your final MAGs in Step 8.
+
+---
+
+## Step 4 — MEGAHIT (assembly, single-end mode)
+
+| Parameter | Value |
+|---|---|
+| Input reads | KneadData's cleaned single-end output |
+| Library type | Single-end |
+
+MEGAHIT natively supports single-end assembly (unlike metaSPAdes, which expects paired input). Use the **Contigs** output (not Scaffolds) for all downstream steps.
+
+---
+
+## Step 5 — Bowtie2 (single-end mode)
 
 **Tool:** `Bowtie2`
 
 | Parameter | Value |
 |---|---|
-| Is this single or paired library | Paired-end |
-| FASTQ Paired Dataset | your reads collection |
+| Is this single or paired library | **Single-end** |
+| FASTQ file |  single-end reads |
 | Reference genome source | Use a genome from the history and build index |
-| Select reference genome | your assembly Contigs |
+| Select reference genome | MEGAHIT assembly Contigs |
 | Set read groups information? | Do not set |
 | Select analysis mode | 1: Default setting only |
 | Save mapping statistics to history | Yes |
@@ -104,11 +164,11 @@ Then sort the output:
 
 ---
 
-## 4. Binning
+## Step 6 — Binning
 
 ### Shared step: Calculate contig depths
 
-**Tool:** `Calculate contig depths` (jgi_summarize_bam_contig_depths)
+**Tool:** `Calculate contig depths` 
 
 | Parameter | Value |
 |---|---|
@@ -116,20 +176,18 @@ Then sort the output:
 | Sorted bam files | Samtools sort output |
 | Select a reference genome? | No |
 
-This depth file is reused by both MetaBAT2 and MaxBin2 below.
+This depth file is reused by MetaBAT2 and MaxBin2 below.
 
-### 4.1 MetaBAT2
+### 6.1 MetaBAT2
 
 **Tool:** `MetaBAT2`
 
 | Parameter | Value |
 |---|---|
 | Fasta file containing contigs | assembly Contigs |
-| **Use a base coverage depth file?** | **Yes** → select the depth matrix from above |
-| Minimum size of a contig for binning | 2500 (lower to 500–1000 for small/fragmented demo assemblies) |
-| Minimum size of a bin as the output | 200000 (lower to ~10,000–25,000 for small demo assemblies) |
 
-### 4.2 MaxBin2
+
+### 6.2 MaxBin2
 
 **Tool:** `MaxBin2`
 
@@ -138,14 +196,14 @@ This depth file is reused by both MetaBAT2 and MaxBin2 below.
 | Contig file | assembly Contigs |
 | Assembly type used to generate contig(s) | Assembly of sample(s) one by one (individual assembly) |
 | Input type | Abundances |
-| **Abundance file** | the same depth matrix (**not** the assembly fasta — see [Troubleshooting](#troubleshooting--common-pitfalls)) |
+| **Abundance file** | the same depth matrix (**not** the assembly fasta) |
 | Outputs → all four toggles | Yes |
 
-### 4.3 CONCOCT
+### 6.3 CONCOCT
 
 CONCOCT needs its own multi-step chain, since it clusters cut-up contig fragments rather than whole contigs.
 
-**Step 1 — Cut up contigs**
+**Step A — Cut up contigs**
 
 | Parameter | Value |
 |---|---|
@@ -155,61 +213,48 @@ CONCOCT needs its own multi-step chain, since it clusters cut-up contig fragment
 | **Concatenate final part to last contig?** | **Yes** ⚠️ (critical — see Troubleshooting) |
 | Output bed file? | Yes |
 
-**Step 2 — Generate the input coverage table**
+**Step B — Generate the input coverage table**
 
 | Parameter | Value |
 |---|---|
-| Contigs BEDFile | BED output from Step 1 |
+| Contigs BEDFile | BED output from Step A |
 | Type of assembly | Individual assembly: 1 run per BAM file |
 | Sorted BAM file | Samtools sort output |
 
-**Step 3 — Run CONCOCT**
+**Step C — Run CONCOCT**
 
 | Parameter | Value |
 |---|---|
-| Coverage file | output of Step 2 |
-| Composition file with sequences | cut-up fasta from Step 1 |
-| Read length for coverage | your actual read length (e.g. 150 — a plain number, not a placeholder) |
+| Coverage file | output of Step B |
+| Composition file with sequences | cut-up fasta from Step A |
+| Read length for coverage | your actual read length (e.g. 150 — a plain number) |
 
-**Step 4 — Merge cut clusters**
+**Step D — Merge cut clusters**
 
 | Parameter | Value |
 |---|---|
-| Clusters generated by CONCOCT | the **"Clusters"** output of Step 3 (not "PCA transformed clusters") |
+| Clusters generated by CONCOCT | the **"Clusters"** output of Step C (not "PCA transformed clusters") |
 
-**Step 5 — Extract a fasta file**
+**Step E — Extract a fasta file**
 
 | Parameter | Value |
 |---|---|
 | Original contig file | assembly Contigs (original, full-length — not cut-up) |
-| CONCOCT clusters | merged clusters from Step 4 |
+| CONCOCT clusters | merged clusters from Step D |
 
 > ⚠️ CONCOCT's Gaussian clustering model often struggles on small/uneven-coverage demo datasets — expect many low-completeness bins. This is documented, expected behavior, not a sign of misconfiguration.
 
+> ⚠️ **Do not use MetaWRAP** anywhere in this pipeline — it hard-requires a `collection_type="paired"` input and will not accept single-end reads under any workaround.
+
 ---
 
-## 5. Bin Refinement
+## Step 7 — Bin Refinement (DAS_Tool)
 
-Combine the outputs of all three binners into one consensus, non-redundant bin set.
-
-**First, convert each binner's fasta bins into a contig-to-bin table:**
+First, convert each binner's fasta bins into a contig-to-bin table:
 
 **Tool:** `Converts genome bins in fasta format` — run once per binner, selecting each binner's final fasta bin output (MetaBAT2's "Bin sequences", MaxBin2's "Bins", CONCOCT's "Extract a fasta file" output).
 
-### Option A: Binette
-
-**Tool:** `Build list` — combine the three contig-to-bin tables into one list (Insert Dataset ×3, label each `Index`)
-
-**Tool:** `Binette`
-
-| Parameter | Value |
-|---|---|
-| Input contig table | Build list output |
-| Input contig file | assembly Contigs |
-| Database | cached database → CheckM2 diamond DB |
-| Minimum completeness | 0 (demo data) |
-
-### Option B: DAS_Tool (alternative to Binette)
+Then run:
 
 **Tool:** `DAS Tool for genome-resolved metagenomics`
 
@@ -225,19 +270,19 @@ Combine the outputs of all three binners into one consensus, non-redundant bin s
 
 ---
 
-## 6. Quality Assessment (CheckM)
+## Step 8 — Quality Assessment & Taxonomy
+
+### CheckM
 
 **Tool:** `CheckM lineage_wf`
 
 | Parameter | Value |
 |---|---|
-| Bins | your final refined bins (Binette or DAS_Tool output) |
+| Bins | DAS_Tool "Bins" output |
 
 Gives completeness %, contamination %, and strain heterogeneity per bin.
 
----
-
-## 7. Taxonomic Classification (GTDB-Tk)
+### GTDB-Tk
 
 Galaxy's GTDB-Tk tool requires a specific pre-cached database release that may not be available on your instance. If unavailable, run locally instead:
 
@@ -264,6 +309,73 @@ cat gtdbtk_output/gtdbtk.bac120.summary.tsv
 
 > Low-completeness bins may only classify to a shallow taxonomic level (e.g. phylum rather than species) — this is expected with partial genomes.
 
+**Finally, compare methods:** put your **MetaPHlAn read-based taxonomic profile** (Step 4) side by side with the **GTDB-Tk classification of your assembled/binned MAGs** (this step) — a good discussion point on how read-based vs. assembly-based taxonomic methods can agree or diverge.
+
+---
+
+## Step 9 — KBase: Phylogenetic Classification
+
+As an alternative (or complement) to running GTDB-Tk locally, you can run the same classification inside [KBase](https://www.kbase.us/) — a free, browser-based platform that also gives you a proper phylogenetic tree placement for your MAGs, not just a summary table.
+
+### 9.1 — Upload your high-quality MAGs to KBase
+
+1. Take the **ranked/high-quality bins** from your DAS_Tool output (Step 8) — typically the ones with the best completeness/contamination scores from Step 9's CheckM report.
+2. In a KBase Narrative, go to **Upload** → **Staging Area**, and upload each MAG fasta file.
+3. For each fasta file, run:
+
+   **App:** `Import FASTA as Assembly from Staging`
+
+   | Parameter | Value |
+   |---|---|
+   | Staging file | your MAG fasta file |
+   | Assembly name | a clear name per MAG (e.g. `mag_1_assembly`) |
+   | Type | draft isolate (or metagenome, depending on how you want it labeled) |
+   | Min contig length | 0 (don't filter further — you've already refined these bins) |
+
+Repeat for each MAG you want to classify.
+
+### 9.2 — Build an AssemblySet
+
+GTDB-Tk in KBase does **not** accept individual Assembly objects directly — they must first be grouped into an **AssemblySet** (this avoids running the app inefficiently, once per genome).
+
+**App:** `Build AssemblySet`
+
+| Parameter | Value |
+|---|---|
+| Assemblies | select all your imported MAG assemblies |
+| Output AssemblySet name | e.g. `workshop_mags_assemblyset` |
+
+### 9.3 — Run GTDB-Tk Classify
+
+**App:** `GTDB-Tk Classify` (`kb_gtdbtk/run_kb_gtdbtk_classify_wf`)
+
+| Parameter | Value |
+|---|---|
+| Input object | your AssemblySet from Step 10.2 |
+| Reference data | keep the default (currently GTDB R07-RS207 / R08-RS214, class-level subtrees — lighter on memory than the full tree) |
+
+**Output:** a taxonomic classification per MAG (domain → species, as far as confidently resolvable) plus a phylogenetic placement, viewable directly in the Narrative.
+
+> Just like with local GTDB-Tk, low-completeness MAGs may only resolve to a shallow taxonomic level (e.g. phylum or genus rather than species).
+
+### 9.4 — Identify the pathogen
+
+Review the GTDB-Tk classification output for each MAG. If a MAG classifies to a genus/species with known pathogenic members (e.g. *Salmonella*, *Escherichia*, *Klebsiella*, *Mycobacterium*, etc.), that's your candidate for the next step. Cross-check the identification against what you'd expect from your **MetaPHlAn** read-based profile (Step 4) as a sanity check — the two methods should broadly agree.
+
+---
+
+## Step 10 — Pathogenwatch: Pathogen Identification
+
+Once you've identified a MAG of interest as a likely pathogen, upload its fasta file to [Pathogenwatch](https://pathogen.watch/) for pathogen-specific genomic analysis (AMR gene detection, MLST typing, and species-specific typing schemes where available).
+
+1. Download the specific MAG's fasta file from KBase (or directly from your Galaxy DAS_Tool "Bins" output).
+2. Go to [pathogen.watch/upload](https://pathogen.watch/upload) and create/sign in to an account.
+3. Select the correct **organism/species scheme** matching your GTDB-Tk classification (Pathogenwatch supports specific pathogens — e.g. *Salmonella*, *E. coli*, *Klebsiella*, *M. tuberculosis*, *Neisseria*, and others — check their supported organism list, since unsupported organisms won't have a dedicated typing scheme).
+4. Upload the fasta file.
+5. Review the results: AMR gene predictions, sequence typing (MLST/cgMLST where supported), and clustering against Pathogenwatch's global genome collection.
+
+> This final step ties the whole pipeline together: raw reads → assembly → binning → refined MAG → taxonomic identity → pathogen-specific genomic surveillance, mirroring a real genomic epidemiology workflow.
+
 ---
 
 ## Troubleshooting / Common Pitfalls
@@ -280,20 +392,24 @@ These are real issues encountered while building this pipeline — listed here s
 | CONCOCT bins mostly 0% completeness | Known limitation — CONCOCT's clustering struggles on small/low-coverage assemblies | Expected; not a configuration error. Document as a discussion point. |
 | GTDB-Tk (Galaxy): "No options available... requires release 232" | No cached database on the Galaxy instance | Run locally via conda instead, or ask a Galaxy admin to install it |
 | GTDB-Tk (local): `AttributeError: module 'numpy' has no attribute 'bool'` | numpy ≥1.24 removed the deprecated `np.bool` alias that GTDB-Tk 2.1.1 still uses | `pip install "numpy<1.24" --force-reinstall` in the gtdbtk conda environment |
-| Paired collection auto-pairing fails | Filenames like `reads_forward`/`reads_reverse` don't match Galaxy's default `_1`/`_2` pattern | Use "configure auto-pairing" to add a custom pattern, or pair manually |
+| Trying to pair a single-end/tiled mock sample | Reads have no real mate-pair relationship — pairing can't be fabricated | Keep and process as single-end throughout; do not attempt to force-pair |
+| KBase GTDB-Tk Classify rejects individual Assembly objects | The app requires an **AssemblySet**, not standalone Assemblies | Run `Build AssemblySet` first, then pass that as input |
+| Pathogenwatch upload has no matching typing scheme | The identified organism isn't one of Pathogenwatch's supported pathogens | Check Pathogenwatch's supported organism list before uploading; some MAGs may only support generic AMR gene detection without a species-specific scheme |
 
 ---
 
-## Summary: Expected Results on the Demo Dataset
+## Summary: What to Expect
 
-| Binner | Bins produced | Best completeness | Notes |
-|---|---|---|---|
-| MetaBAT2 | 1 | ~15.7% | Clean, no contamination |
-| MaxBin2 | 2 | 10.5% / 6.9% | No contamination |
-| CONCOCT | ~10 | ~15.7% (1 bin); rest ~0% | Struggles on small/uneven-coverage assemblies |
-| Refined (Binette/DAS_Tool) | 2 | ~15.7% | Best bins combined across all three tools |
+On a small single-end demo/mock dataset, expect:
 
-Recovering even 1-2 low-to-moderate completeness MAGs from a small demo dataset is a **successful, expected outcome** — real-world analyses with full sequencing depth recover more numerous and more complete genomes.
+| Binner | Typical bins produced | Notes |
+|---|---|---|
+| MetaBAT2 | 1 | Clean, no contamination |
+| MaxBin2 | 1–2 | No contamination |
+| CONCOCT | Several, mostly low completeness | Struggles on small/uneven-coverage assemblies |
+| Refined (DAS_Tool) | 1–2 | Best bins combined across all three tools |
+
+Recovering even 1–2 low-to-moderate completeness MAGs from a small demo dataset is a **successful, expected outcome** — real-world analyses with full sequencing depth recover more numerous and more complete genomes.
 
 ---
 
