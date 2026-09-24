@@ -52,7 +52,7 @@ Some mock/demo samples — particularly synthetically generated, reference-based
 
 **A tell-tale sign of a synthetically tiled mock sample:** headers where each successive read starts exactly one base later than the previous one, combined with uniform maximum quality scores across every base. If you see this pattern, treat the file as single-end and do not attempt to force-pair or interleave it.
 
-Because of this, this tutorial uses **single-end-specific settings** at every relevant step, and **does not use MetaWRAP** — MetaWRAP hard-requires a paired dataset collection and will not accept single-end reads under any workaround.
+Because of this, this tutorial uses **single-end-specific settings** at every relevant step.
 
 ---
 
@@ -222,7 +222,7 @@ CONCOCT needs its own multi-step chain, since it clusters cut-up contig fragment
 | Fasta contigs file | assembly Contigs |
 | Chunk size | 10000 |
 | Overlap size | 0 |
-| **Concatenate final part to last contig?** | **Yes** ⚠️ (critical — see Troubleshooting) |
+| **Concatenate final part to last contig?** | **Yes** |
 | Output bed file? | Yes |
 
 **Step B — Generate the input coverage table**
