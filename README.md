@@ -28,6 +28,7 @@ Adapted from the official [GTN Binning of metagenomic sequencing data tutorial](
 ## Prerequisites
 
 - A [Galaxy_EU](https://usegalaxy.eu/) account or [Glaxy_US](https://usegalaxy.org/) account
+- A [KBase](https://www.kbase.us/) account
 - A single-end fastq.gz sample (e.g. a mock/demo community)
 - Basic familiarity with the Galaxy interface (uploading data, running tools)
 
