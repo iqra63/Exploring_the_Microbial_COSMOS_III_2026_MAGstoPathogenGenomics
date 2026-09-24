@@ -1,5 +1,5 @@
 # Exploring the Microbial COSMOS III
-### From a single-end mock sample to quality-checked, taxonomically classified MAGs — using Galaxy
+### From a single-end mock sample to quality-checked, taxonomically classified MAGs using Galaxy
 
 This tutorial walks through a complete metagenomic binning pipeline in [Galaxy](https://usegalaxy.eu/), starting from a **single-end** mock/demo sample, through quality control, taxonomic profiling, assembly, binning, refinement, quality assessment, and taxonomic classification of the final MAGs.
 
@@ -44,13 +44,11 @@ Completing these two tool runs (FastQC and KneadData) ahead of time means we can
 
 ## About the Sample
 
-Some mock/demo samples — particularly synthetically generated, reference-based mock communities — are **single-end only** and **cannot be converted to paired-end**. Pairing reflects a real physical sequencing process (two ends of the same DNA fragment being sequenced); a single tiled or single-end fastq file has no second read to pair with.
+Some mock/demo samples, particularly synthetically generated, reference-based mock communities — are **single-end only** and **cannot be converted to paired-end**. Pairing reflects a real physical sequencing process (two ends of the same DNA fragment being sequenced); a single tiled or single-end fastq file has no second read to pair with.
 
 **A tell-tale sign of a synthetically tiled mock sample:** headers where each successive read starts exactly one base later than the previous one, combined with uniform maximum quality scores across every base. If you see this pattern, treat the file as single-end and do not attempt to force-pair or interleave it.
 
-Because of this, this tutorial uses **single-end-specific settings** at every relevant step, and **does not use MetaWRAP** — MetaWRAP hard-requires a paired dataset collection and will not accept single-end reads under any workaround.
-
----
+Because of this, this tutorial uses **single-end-specific settings** at every relevant step.
 
 ## Workflow at a Glance
 
