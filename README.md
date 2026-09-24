@@ -1,4 +1,4 @@
-# Metagenomics to Pathogen Genomics Workshop
+# Exploring the Microbial COSMOS III
 ### From a single-end mock sample to quality-checked, taxonomically classified MAGs — using Galaxy
 
 This tutorial walks through a complete metagenomic binning pipeline in [Galaxy](https://usegalaxy.eu/), starting from a **single-end** mock/demo sample, through quality control, taxonomic profiling, assembly, binning, refinement, quality assessment, and taxonomic classification of the final MAGs.
@@ -21,7 +21,7 @@ Adapted from the official [GTN Binning of metagenomic sequencing data tutorial](
 11. [Step 8 — Quality Assessment & Taxonomy](#step-8--quality-assessment--taxonomy)
 12. [Step 9 — KBase: Phylogenetic Classification](#step-9--kbase-phylogenetic-classification)
 13. [Step 10 — Pathogenwatch: Pathogen Identification](#step-10--pathogenwatch-pathogen-identification)
-14. [Troubleshooting](#troubleshooting--common-pitfalls)
+
 
 ---
 
@@ -30,6 +30,7 @@ Adapted from the official [GTN Binning of metagenomic sequencing data tutorial](
 - A [Galaxy](https://usegalaxy.eu/) account
 - A single-end fastq.gz sample (e.g. a mock/demo community)
 - Basic familiarity with the Galaxy interface (uploading data, running tools)
+- Try to run Step 1 and Step 2
 
 ---
 
@@ -197,7 +198,6 @@ This depth file is reused by MetaBAT2 and MaxBin2 below.
 | Assembly type used to generate contig(s) | Assembly of sample(s) one by one (individual assembly) |
 | Input type | Abundances |
 | **Abundance file** | the same depth matrix (**not** the assembly fasta) |
-| Outputs → all four toggles | Yes |
 
 ### 6.3 CONCOCT
 
@@ -239,7 +239,7 @@ CONCOCT needs its own multi-step chain, since it clusters cut-up contig fragment
 
 | Parameter | Value |
 |---|---|
-| Original contig file | assembly Contigs (original, full-length — not cut-up) |
+| Original contig file | assembly Contigs by MEGAHIT (original, full-length — not cut-up) |
 | CONCOCT clusters | merged clusters from Step D |
 
 > ⚠️ CONCOCT's Gaussian clustering model often struggles on small/uneven-coverage demo datasets — expect many low-completeness bins. This is documented, expected behavior, not a sign of misconfiguration.
@@ -313,7 +313,7 @@ cat gtdbtk_output/gtdbtk.bac120.summary.tsv
 
 ---
 
-## Step 9 — KBase: Phylogenetic Classification
+## Step 9 — KBase: MAGs Phylogenetic Classification
 
 As an alternative (or complement) to running GTDB-Tk locally, you can run the same classification inside [KBase](https://www.kbase.us/) — a free, browser-based platform that also gives you a proper phylogenetic tree placement for your MAGs, not just a summary table.
 
@@ -360,7 +360,7 @@ GTDB-Tk in KBase does **not** accept individual Assembly objects directly — th
 
 ### 9.4 — Identify the pathogen
 
-Review the GTDB-Tk classification output for each MAG. If a MAG classifies to a genus/species with known pathogenic members (e.g. *Salmonella*, *Escherichia*, *Klebsiella*, *Mycobacterium*, etc.), that's your candidate for the next step. Cross-check the identification against what you'd expect from your **MetaPHlAn** read-based profile (Step 4) as a sanity check — the two methods should broadly agree.
+Review the GTDB-Tk classification output for each MAG. If a MAG classifies to a genus/species with known pathogenic members (e.g. *Salmonella*, *Escherichia*, *Klebsiella*, *Mycobacterium*, *Streptococcus* etc.), that's your candidate for the next step. Cross-check the identification against what you'd expect from your **MetaPHlAn** read-based profile (Step 4) as a sanity check — the two methods should broadly agree.
 
 ---
 
@@ -370,7 +370,7 @@ Once you've identified a MAG of interest as a likely pathogen, upload its fasta 
 
 1. Download the specific MAG's fasta file from KBase (or directly from your Galaxy DAS_Tool "Bins" output).
 2. Go to [pathogen.watch/upload](https://pathogen.watch/upload) and create/sign in to an account.
-3. Select the correct **organism/species scheme** matching your GTDB-Tk classification (Pathogenwatch supports specific pathogens — e.g. *Salmonella*, *E. coli*, *Klebsiella*, *M. tuberculosis*, *Neisseria*, and others — check their supported organism list, since unsupported organisms won't have a dedicated typing scheme).
+3. Select the correct **organism/species scheme** matching your GTDB-Tk classification (Pathogenwatch supports specific pathogens — e.g. *Streptococcus*, *Salmonella*, *E. coli*, *Klebsiella*, *M. tuberculosis*, *Neisseria*, and others — check their supported organism list, since unsupported organisms won't have a dedicated typing scheme).
 4. Upload the fasta file.
 5. Review the results: AMR gene predictions, sequence typing (MLST/cgMLST where supported), and clustering against Pathogenwatch's global genome collection.
 
@@ -378,38 +378,8 @@ Once you've identified a MAG of interest as a likely pathogen, upload its fasta 
 
 ---
 
-## Troubleshooting / Common Pitfalls
 
-These are real issues encountered while building this pipeline — listed here so you don't have to rediscover them.
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| MetaBAT2 runs "fine" but produces 0 bins | `Use a base coverage depth file?` left on default "No", or bin size threshold too high | Set to Yes + select depth file; lower "Minimum size of a bin" for small demo assemblies |
-| MaxBin2: `Failed to get abundance information` | Assembly fasta accidentally used as the abundance file | Use the **depth matrix** output, not the contigs fasta |
-| MaxBin2 job held/killed by scheduler | Exceeded requested memory (marker-gene search is resource-heavy) | Retry with a smaller dataset, or drop MaxBin2 if repeatedly failing on limited infrastructure |
-| CONCOCT: `TypeError: Invalid value ... for dtype 'float64'` | Composition/coverage files mismatched, or wrong file (e.g. a BED file) plugged in as "Coverage file" | Regenerate the coverage table end-to-end using a matching BED + BAM; double-check you're selecting the actual coverage table, not the BED file |
-| CONCOCT: `can only concatenate str (not "float") to str` | `Concatenate final part to last contig?` left on default "No", creating tiny leftover fragments with unreliable coverage | Set to **Yes** in "Cut up contigs" |
-| CONCOCT bins mostly 0% completeness | Known limitation — CONCOCT's clustering struggles on small/low-coverage assemblies | Expected; not a configuration error. Document as a discussion point. |
-| GTDB-Tk (Galaxy): "No options available... requires release 232" | No cached database on the Galaxy instance | Run locally via conda instead, or ask a Galaxy admin to install it |
-| GTDB-Tk (local): `AttributeError: module 'numpy' has no attribute 'bool'` | numpy ≥1.24 removed the deprecated `np.bool` alias that GTDB-Tk 2.1.1 still uses | `pip install "numpy<1.24" --force-reinstall` in the gtdbtk conda environment |
-| Trying to pair a single-end/tiled mock sample | Reads have no real mate-pair relationship — pairing can't be fabricated | Keep and process as single-end throughout; do not attempt to force-pair |
-| KBase GTDB-Tk Classify rejects individual Assembly objects | The app requires an **AssemblySet**, not standalone Assemblies | Run `Build AssemblySet` first, then pass that as input |
-| Pathogenwatch upload has no matching typing scheme | The identified organism isn't one of Pathogenwatch's supported pathogens | Check Pathogenwatch's supported organism list before uploading; some MAGs may only support generic AMR gene detection without a species-specific scheme |
-
----
-
-## Summary: What to Expect
-
-On a small single-end demo/mock dataset, expect:
-
-| Binner | Typical bins produced | Notes |
-|---|---|---|
-| MetaBAT2 | 1 | Clean, no contamination |
-| MaxBin2 | 1–2 | No contamination |
-| CONCOCT | Several, mostly low completeness | Struggles on small/uneven-coverage assemblies |
-| Refined (DAS_Tool) | 1–2 | Best bins combined across all three tools |
-
-Recovering even 1–2 low-to-moderate completeness MAGs from a small demo dataset is a **successful, expected outcome** — real-world analyses with full sequencing depth recover more numerous and more complete genomes.
 
 ---
 
