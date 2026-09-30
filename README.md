@@ -27,17 +27,17 @@ Adapted from the official [GTN Binning of metagenomic sequencing data tutorial](
 
 ## Prerequisites
 
-- A [Galaxy_EU](https://usegalaxy.eu/) account (preferably) or [Glaxy_US](https://usegalaxy.org/) account
+- A [Galaxy_EU](https://usegalaxy.eu/) account (preferably) or [Galaxy_US](https://usegalaxy.org/) account
 - A [KBase](https://www.kbase.us/) account
-- A single-end fastq.gz sample (e.g. a mock/demo community)
+- A single-end fastq.gz sample (e.g. a mock/demo community) — **download the workshop sample here:** [Google Drive link](https://drive.google.com/file/d/1YgWx2zSyQLRAjkfjUi3LeDYDG9suPe7e/view?usp=sharing)
 - Basic familiarity with the Galaxy interface (uploading data, running tools)
 
 **Before the workshop, please complete the following setup:**
 
-1. **Create a new history** in Galaxy — this keeps all your workshop files organized in one place (click the **+** icon at the top of the History panel, or **Data → Histories → Create new → Name it Workshop_2026 → Save**).
+1. **Create a new history** in Galaxy — this keeps all your workshop files organized in one place (click the **+** icon at the top of the History panel, or **Data → Histories → Create new → Name it `Workshop_2026` → Save**).
 2. **Upload your data** — click the **Upload Data** button (top-left of the tool panel). In the upload window:
-   - Click **Choose local file** (or drag and drop) and select your `.fastq.gz` file.
-   - Set the **Type** (file format) dropdown to **`fastqsanger.gz`** , do not leave it as "auto-detect".
+   - Click **Choose local file** (or drag and drop) and select your `.fastq.gz` file downloaded from the link above.
+   - Set the **Type** (file format) dropdown to **`fastqsanger.gz`** — do not leave it as "auto-detect".
    - Click the **Start** button to begin the upload.
    - Once finished, click **Close**, and wait until the dataset turns **green** in your History panel on the right before moving on.
 3. **Run FastQC** — use the tool search bar on the left-hand tool panel, search for "**fastqc**", select the tool, and run it on your uploaded file (see [Step 1](#step-1--fastqc) below for full details).
