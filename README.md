@@ -34,7 +34,7 @@ Adapted from the official [GTN Binning of metagenomic sequencing data tutorial](
 
 **Before the workshop, please complete the following setup:**
 
-1. **Create a new history** in Galaxy — this keeps all your workshop files organized in one place (click the **+** icon at the top of the History panel, or **Data → Histories → Create new**).
+1. **Create a new history** in Galaxy — this keeps all your workshop files organized in one place (click the **+** icon at the top of the History panel, or **Data → Histories → Create new → Name it Workshop_2026 → Save**).
 2. **Upload your data** — click the **Upload Data** button (top-left of the tool panel). In the upload window:
    - Click **Choose local file** (or drag and drop) and select your `.fastq.gz` file.
    - Set the **Type** (file format) dropdown to **`fastqsanger.gz`** , do not leave it as "auto-detect".
